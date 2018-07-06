@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+    id 'maven'
+}
+
+group 'ru.gpb'
+version '1.0.0'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+jar {
+
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+
+    manifest {
+        attributes(
+                'Main-Class': 'ru.gpb.Main',
+                'Implementation-Version': version
+        )
+    }
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    compile group: 'ru.gpb', name: 'core', version: '1.0.0'
+
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.0'
+}
