@@ -1,11 +1,12 @@
 package ru.gpb;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.gpb.core.Mappers;
 import ru.gpb.core.Row;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -24,6 +25,7 @@ import static ru.gpb.core.Constants.FILE_CHARSET;
  * on 06.07.18
  */
 public class Main {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
     private static final String HELP = "Arguments:\n" +
             "the first - input file name which contains operations\n" +
             "the second - output file name which contains sums by date\n" +
@@ -35,8 +37,7 @@ public class Main {
     public static void main(String[] args) {
         try {
             // validate args
-            InputValidator validator = new InputValidator();
-            validator.validate(args);
+            InputValidator.validate(args);
 
             Options options = Options.parseOptions(args);
 
@@ -55,20 +56,22 @@ public class Main {
 
         } catch (IOException ioe) {
             System.out.println("An error occurred while FS working: " + ioe.getMessage());
+            LOGGER.error("IO troubles", ioe);
         } catch (Exception e) {
             System.out.println("Something went wrong: " + e.getMessage());
+            LOGGER.error("Unhandled exception", e);
         }
     }
 
     static void writeToOutput(Options options, String sumsByOffice, String sumsByDate) throws IOException {
         Files.write(
                 Paths.get(options.getSumsByOfficeFileName()),
-                sumsByOffice.getBytes(Charset.forName(FILE_CHARSET)),
+                sumsByOffice.getBytes(FILE_CHARSET),
                 StandardOpenOption.CREATE
         );
         Files.write(
                 Paths.get(options.getSumsByDateFileName()),
-                sumsByDate.getBytes(Charset.forName(FILE_CHARSET)),
+                sumsByDate.getBytes(FILE_CHARSET),
                 StandardOpenOption.CREATE
         );
     }

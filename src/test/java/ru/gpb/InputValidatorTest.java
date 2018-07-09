@@ -1,6 +1,7 @@
 package ru.gpb;
 
 import org.junit.Test;
+import ru.gpb.core.ApplicationException;
 
 /**
  * @author Danil Popov
