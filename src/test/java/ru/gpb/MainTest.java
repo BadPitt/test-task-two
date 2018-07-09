@@ -18,13 +18,13 @@ public class MainTest {
     private static final String OUTPUT_FILE_NAME_DATES_REF = "src/test/resources/simpleOutputReffDates.txt";
     private static final String INPUT_FILE_NAME = "src/test/resources/simpleInput.txt";
 
-    //@BeforeClass
+    @BeforeClass
     public static void prepare() {
         clear(OUTPUT_FILE_NAME_SP);
         clear(OUTPUT_FILE_NAME_DATES);
     }
 
-    //@AfterClass
+    @AfterClass
     public static void rmRf() {
         clear(OUTPUT_FILE_NAME_SP);
         clear(OUTPUT_FILE_NAME_DATES);

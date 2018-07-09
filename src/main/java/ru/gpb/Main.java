@@ -3,7 +3,6 @@ package ru.gpb;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.gpb.core.Mappers;
-import ru.gpb.core.Row;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -12,9 +11,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static ru.gpb.core.Constants.DATE_FORMAT;
 import static ru.gpb.core.Constants.FILE_CHARSET;
@@ -46,13 +43,9 @@ public class Main {
                 return;
             }
 
-            List<Row> rows = getAllRows(options.getInputFileName());
+            sumByOffice(options);
 
-            String sumsByOffice = getSumsByOffice(rows);
-
-            String sumsByDate = getSumsByDate(rows);
-
-            writeToOutput(options, sumsByOffice, sumsByDate);
+            sumByDate(options);
 
         } catch (IOException ioe) {
             System.out.println("An error occurred while FS working: " + ioe.getMessage());
@@ -63,37 +56,15 @@ public class Main {
         }
     }
 
-    static void writeToOutput(Options options, String sumsByOffice, String sumsByDate) throws IOException {
-        Files.write(
-                Paths.get(options.getSumsByOfficeFileName()),
-                sumsByOffice.getBytes(FILE_CHARSET),
-                StandardOpenOption.CREATE
-        );
-        Files.write(
-                Paths.get(options.getSumsByDateFileName()),
-                sumsByDate.getBytes(FILE_CHARSET),
-                StandardOpenOption.CREATE
-        );
-    }
-
-    static List<Row> getAllRows(String inputFileName) throws IOException {
-        return Files.readAllLines(Paths.get(inputFileName)).stream()
+    private static void sumByDate(Options options) throws IOException {
+        Files.readAllLines(Paths.get(options.getInputFileName())).stream()
                 .map(Mappers::stringToRow)
-                .collect(Collectors.toList());
-    }
-
-    static String getSumsByDate(List<Row> rows) {
-        return rows.stream()
                 // reduce to map K - date string, V - sum
                 .reduce(
                         new HashMap<String, BigDecimal>(),
                         (map, row) -> {
                             String key = DATE_FORMAT.format(row.getOperationDate());
-                            if (map.containsKey(key)) {
-                                map.put(key, map.get(key).add(row.getOperationSum()));
-                            } else {
-                                map.put(key, row.getOperationSum());
-                            }
+                            map.merge(key, row.getOperationSum(), BigDecimal::add);
                             return map;
                         },
                         (map, map1) -> map)
@@ -101,23 +72,18 @@ public class Main {
                 // sort by date string
                 .sorted(Comparator.comparing(Map.Entry::getKey))
                 // every entry to string
-                .map(entity -> "" + entity.getKey() + " " + entity.getValue())
-                // every string to one string
-                .reduce((str1, str2) -> str1 + "\n" + str2)
-                .get();
+                .map(entity -> "" + entity.getKey() + " " + entity.getValue() + "\n")
+                .forEach(a -> writeStrToFile(a, options.getSumsByDateFileName()));
     }
 
-    static String getSumsByOffice(List<Row> rows) {
-        return rows.stream()
+    private static void sumByOffice(Options options) throws IOException {
+        Files.readAllLines(Paths.get(options.getInputFileName())).stream()
+                .map(Mappers::stringToRow)
                 // reduce to map K - sell point name, V - sum
                 .reduce(
                         new HashMap<String, BigDecimal>(),
                         (map, row) -> {
-                            if (map.containsKey(row.getSellPoint())) {
-                                map.put(row.getSellPoint(), map.get(row.getSellPoint()).add(row.getOperationSum()));
-                            } else {
-                                map.put(row.getSellPoint(), row.getOperationSum());
-                            }
+                            map.merge(row.getSellPoint(), row.getOperationSum(), BigDecimal::add);
                             return map;
                         },
                         (map, map1) -> map)
@@ -126,9 +92,20 @@ public class Main {
                 .sorted(Comparator.comparing((Map.Entry<String, BigDecimal> e1) -> e1.getValue())
                         .reversed())
                 // every entry to string
-                .map(entity -> "" + entity.getKey() + " " + entity.getValue())
-                // every string to one string
-                .reduce((str1, str2) -> str1 + "\n" + str2)
-                .get();
+                .map(entity -> "" + entity.getKey() + " " + entity.getValue() + "\n")
+                .forEach(a -> writeStrToFile(a, options.getSumsByOfficeFileName()));
+    }
+
+    static void writeStrToFile(String rowString, String fileName) {
+        try {
+            Files.write(
+                    Paths.get(fileName),
+                    rowString.getBytes(FILE_CHARSET),
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND
+            );
+        } catch (IOException e) {
+            LOGGER.error("An error occurred", e);
+        }
     }
 }
