@@ -57,7 +57,7 @@ public class Main {
     }
 
     private static void sumByDate(Options options) throws IOException {
-        Files.readAllLines(Paths.get(options.getInputFileName())).stream()
+        Files.lines(Paths.get(options.getInputFileName()))
                 .map(Mappers::stringToRow)
                 // reduce to map K - date string, V - sum
                 .reduce(
@@ -77,7 +77,7 @@ public class Main {
     }
 
     private static void sumByOffice(Options options) throws IOException {
-        Files.readAllLines(Paths.get(options.getInputFileName())).stream()
+        Files.lines(Paths.get(options.getInputFileName()))
                 .map(Mappers::stringToRow)
                 // reduce to map K - sell point name, V - sum
                 .reduce(
